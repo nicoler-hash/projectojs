@@ -1,0 +1,13 @@
+/* Estilos específicos de Usuarios */
+:host{display:block}
+
+.users-header{
+  font-weight:1000;
+  font-size:18px;
+}
+
+.users-subtitle{
+  color:var(--muted);
+  font-size:13px;
+}
+
