@@ -1,27 +1,45 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
-import { auth } from './firebase.js';
-import { db } from './firebase.js';
-import { doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
-import { safeTrim } from './format.js';
 import { dispatch, AppEvents } from './events.js';
+import { safeTrim } from './format.js';
+import { database, ref, get, set } from './rtdb.js';
 
-// We use Firebase Auth for sessions, but user data is stored in Firestore.
-// Login is requested by: identificacion + password.
-// Since Firebase Auth requires email/password, we map identificacion -> email.
-// email format: ident+'@acme.local'
-function emailFromId(ident) {
-  return `${ident}@acme.local`;
+const SESSION_KEY = 'acme_session';
+
+function normalizeIdent(ident) {
+  return safeTrim(ident);
+}
+
+function userPath(identificacion) {
+  return `users/${identificacion}`;
 }
 
 export function onAuth(consumer) {
-  return onAuthStateChanged(auth, (user) => {
-    consumer(user);
-    dispatch(AppEvents.authChanged, { user });
-  });
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    const session = raw ? JSON.parse(raw) : null;
+    consumer(session);
+  } catch {
+    consumer(null);
+  }
+
+  const handler = () => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      const session = raw ? JSON.parse(raw) : null;
+      consumer(session);
+      dispatch(AppEvents.authChanged, { user: session });
+    } catch {
+      consumer(null);
+      dispatch(AppEvents.authChanged, { user: null });
+    }
+  };
+
+  window.addEventListener('storage', handler);
+
+  return () => window.removeEventListener('storage', handler);
 }
 
 export async function registerUser({ identificacion, nombre, cargo, password, password2 }) {
-  identificacion = safeTrim(identificacion);
+  identificacion = normalizeIdent(identificacion);
   nombre = safeTrim(nombre);
   cargo = safeTrim(cargo);
 
@@ -32,38 +50,51 @@ export async function registerUser({ identificacion, nombre, cargo, password, pa
   if (password !== password2) throw new Error('Las contraseñas no coinciden');
   if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
 
-  const email = emailFromId(identificacion);
-
-  // Store in Firestore first (to be able to render later), then create auth user.
-  const ref = doc(db, 'users', identificacion);
-  const snap = await getDoc(ref);
+  const uref = ref(database, userPath(identificacion));
+  const snap = await get(uref);
   if (snap.exists()) throw new Error('El usuario ya existe');
 
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-  await setDoc(ref, {
+  const record = {
     identificacion,
     nombre,
     cargo,
-    uid: cred.user.uid,
-    createdAt: serverTimestamp(),
-  });
+    password,
+    createdAt: Date.now(),
+  };
 
+  await set(uref, record);
   return { identificacion };
 }
 
 export async function loginUser({ identificacion, password }) {
-  identificacion = safeTrim(identificacion);
+  identificacion = normalizeIdent(identificacion);
+  password = safeTrim(password);
+
   if (!identificacion) throw new Error('La identificación es obligatoria');
   if (!password) throw new Error('La contraseña es obligatoria');
 
-  const email = emailFromId(identificacion);
-  await signInWithEmailAndPassword(auth, email, password);
-  return { identificacion };
+  const uref = ref(database, userPath(identificacion));
+  const snap = await get(uref);
+
+  if (!snap.exists()) throw new Error('Usuario no registrado');
+
+  const user = snap.val();
+  if (user?.password !== password) throw new Error('Contraseña incorrecta');
+
+  const session = {
+    identificacion: user.identificacion,
+    nombreCompleto: user.nombre,
+    cargo: user.cargo,
+  };
+
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  dispatch(AppEvents.authChanged, { user: session });
+  return { identificacion: session.identificacion };
 }
 
 export async function logoutUser() {
-  const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js');
-  await signOut(auth);
+  localStorage.removeItem(SESSION_KEY);
+  dispatch(AppEvents.authChanged, { user: null });
 }
+
 

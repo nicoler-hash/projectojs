@@ -30,7 +30,7 @@ class AcmeApp extends HTMLElement {
   }
 
   static get styleText() {
-    return commonUiCss();
+    return commonUiCss() + appShellCss();
   }
 
   connectedCallback() {
@@ -38,8 +38,12 @@ class AcmeApp extends HTMLElement {
 
     this._unsubscribe = onAuth((user) => {
       this.state.user = user;
-      this.render();
+      const loggedNow = !!user;
+      const loggedWas = !!this._lastLogged;
+      this._lastLogged = loggedNow;
+      if (loggedNow !== loggedWas) this.render();
     });
+    this._lastLogged = !!this.state.user;
 
     window.addEventListener(AppEvents.toast, this._onToast);
 
@@ -69,15 +73,9 @@ class AcmeApp extends HTMLElement {
     this.updateViewVisibility();
   }
 
-  updateNavHighlight() {
-    // no-op: kept in sync in template via attributes
-  }
+  updateNavHighlight() {}
 
-  updateViewVisibility() {
-    // View components are always present, but we show/hide in template.
-    // We re-render to keep simple.
-    this.render();
-  }
+  updateViewVisibility() {}
 
   navigate(route) {
     location.hash = route;
@@ -95,10 +93,8 @@ class AcmeApp extends HTMLElement {
     const logged = !!this.state.user;
 
     this.shadowRoot.innerHTML = `
-      <style>
-        ${this.styleText ?? ''}
-      </style>
-      <div class="container">
+      <style>${commonUiCss()}${appShellCss()}</style>
+      <div class="container app-shell">
         ${logged ? this.navTemplate(route) : ''}
 
         <div style="height:14px"></div>
@@ -170,4 +166,13 @@ class AcmeApp extends HTMLElement {
 }
 
 customElements.define('acme-app', AcmeApp);
+
+function appShellCss() {
+  return `
+    .app-shell{
+      padding:24px 0;
+      min-height:100vh;
+    }
+  `;
+}
 

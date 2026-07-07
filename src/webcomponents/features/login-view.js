@@ -10,8 +10,6 @@ class LoginView extends HTMLElement {
 
   connectedCallback() {
     this.render();
-    this.shadowRoot.getElementById('form-login')?.addEventListener('submit', (e) => this.onLogin(e));
-    this.shadowRoot.getElementById('form-register')?.addEventListener('submit', (e) => this.onRegister(e));
     this.shadowRoot.getElementById('to-register')?.addEventListener('click', () => this.toggleForms('register'));
     this.shadowRoot.getElementById('to-login')?.addEventListener('click', () => this.toggleForms('login'));
   }
@@ -24,14 +22,14 @@ class LoginView extends HTMLElement {
 
   async onRegister(e) {
     e.preventDefault();
-    const payload = e?.currentTarget?.__payload || this._readFormData();
+    const payload = e?.currentTarget?.__payload || this._readFormData(e?.currentTarget);
 
     try {
       await registerUser(payload);
 
       dispatch(AppEvents.toast, { type: 'success', title: 'Usuario creado', message: 'Ahora inicia sesión.' });
       this.toggleForms('login');
-      this._clearForm();
+      this._clearForm(this.shadowRoot.getElementById('form-register'));
 
     } catch (err) {
       dispatch(AppEvents.toast, { type: 'danger', title: 'Error', message: err.message || String(err) });
@@ -40,7 +38,7 @@ class LoginView extends HTMLElement {
 
   async onLogin(e) {
     e.preventDefault();
-    const payload = e?.currentTarget?.__payload || this._readFormData();
+    const payload = e?.currentTarget?.__payload || this._readFormData(e?.currentTarget);
 
     try {
       await loginUser(payload);
@@ -101,43 +99,38 @@ class LoginView extends HTMLElement {
       </div>
     `;
 
-    // Make sure inputs are usable in plain form submissions.
-    this._wireInputs(this.shadowRoot.getElementById('form-login'));
-    this._wireInputs(this.shadowRoot.getElementById('form-register'));
+    this._bindForms();
   }
 
-  _clearForm() {
-    this.shadowRoot.querySelectorAll('acme-input').forEach((cmp) => {
+  _bindForms() {
+    const loginForm = this.shadowRoot.getElementById('form-login');
+    const registerForm = this.shadowRoot.getElementById('form-register');
+
+    loginForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.onLogin({ preventDefault() {}, currentTarget: { __payload: this._readFormData(loginForm) } });
+    });
+
+    registerForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.onRegister({ preventDefault() {}, currentTarget: { __payload: this._readFormData(registerForm) } });
+    });
+  }
+
+  _clearForm(formEl) {
+    const scope = formEl || this.shadowRoot;
+    scope.querySelectorAll('acme-input').forEach((cmp) => {
       const name = cmp.getAttribute('name');
       if (!name) return;
       cmp.setAttribute('value', '');
     });
   }
 
-
-  _wireInputs(formEl) {
-    // acme-input renders its own internal input element; we need it to participate in FormData.
-    // We set the name attribute and keep it in the shadow tree; browsers don't include shadow inputs in FormData.
-    // Therefore we intercept submit and read values directly from components.
-    if (!formEl) return;
-
-    formEl.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const payload = this._readFormData(formEl);
-      if (formEl.id === 'form-login') {
-        this.onLogin({ preventDefault(){}, currentTarget: { ...formEl, __payload: payload } });
-      }
-      if (formEl.id === 'form-register') {
-        this.onRegister({ preventDefault(){}, currentTarget: { ...formEl, __payload: payload } });
-      }
-    }, { once: true });
-  }
-
-  _readFormData() {
+  _readFormData(formEl) {
     const payload = {};
-    const inputs = this.shadowRoot.querySelectorAll('acme-input');
+    if (!formEl) return payload;
 
-    inputs.forEach((cmp) => {
+    formEl.querySelectorAll('acme-input').forEach((cmp) => {
       const nm = cmp.getAttribute('name');
       if (!nm) return;
 
