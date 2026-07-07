@@ -72,6 +72,7 @@ export async function initInventory(container) {
                         <th>Tipo</th>
                         <th>Proveedor</th>
                         <th>Stock Actual</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="inventory-tbody">
@@ -85,7 +86,6 @@ export async function initInventory(container) {
     const tbody = document.getElementById('inventory-tbody');
     const searchFilter = document.getElementById('search-filter');
     
-
     const formProductContainer = document.getElementById('form-product-container');
     const formStockContainer = document.getElementById('form-stock-container');
     const productForm = document.getElementById('product-form');
@@ -95,6 +95,7 @@ export async function initInventory(container) {
     const formulaItems = document.getElementById('formula-items');
     
     let products = {};
+    let isEditingProd = false;
 
     function showAlert(msg, type = 'error') {
         alertBox.textContent = msg;
@@ -126,9 +127,22 @@ export async function initInventory(container) {
                     <td>${typeName}</td>
                     <td>${prod.provider}</td>
                     <td><strong>${prod.stock || 0}</strong></td>
+                    <td>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn-edit-prod" data-id="${prod.id}" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">Editar</button>
+                            <button class="btn-delete-prod btn-danger" data-id="${prod.id}" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.9rem;">Eliminar</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             }
+        });
+
+        document.querySelectorAll('.btn-edit-prod').forEach(btn => {
+            btn.addEventListener('click', (e) => editProduct(e.target.dataset.id));
+        });
+        document.querySelectorAll('.btn-delete-prod').forEach(btn => {
+            btn.addEventListener('click', (e) => deleteProduct(e.target.dataset.id));
         });
     }
 
@@ -159,16 +173,18 @@ export async function initInventory(container) {
     prodType.addEventListener('change', (e) => {
         if (e.target.value === 'finished') {
             formulaSection.style.display = 'block';
-            formulaItems.innerHTML = '';
-            addFormulaItem();
+            if (!isEditingProd || formulaItems.children.length === 0) {
+                formulaItems.innerHTML = '';
+                addFormulaItem();
+            }
         } else {
             formulaSection.style.display = 'none';
         }
     });
 
-    document.getElementById('btn-add-formula-item').addEventListener('click', addFormulaItem);
+    document.getElementById('btn-add-formula-item').addEventListener('click', () => addFormulaItem());
 
-    function addFormulaItem() {
+    function addFormulaItem(existingItem = null) {
         const div = document.createElement('div');
         div.className = 'flex gap-1 items-center mb-1 formula-row';
         div.innerHTML = `
@@ -178,14 +194,22 @@ export async function initInventory(container) {
             <input type="number" class="formula-qty" placeholder="Cantidad" min="0.01" step="0.01" style="margin-bottom: 0;" required>
             <button type="button" class="btn-danger btn-remove-formula" style="width: auto; margin-bottom: 0;">X</button>
         `;
+        
+        if (existingItem) {
+            div.querySelector('.formula-raw-id').value = existingItem.id;
+            div.querySelector('.formula-qty').value = existingItem.qty;
+        }
+        
         div.querySelector('.btn-remove-formula').addEventListener('click', () => div.remove());
         formulaItems.appendChild(div);
     }
 
-
     document.getElementById('btn-new-product').addEventListener('click', () => {
+        isEditingProd = false;
         formStockContainer.style.display = 'none';
         formProductContainer.style.display = 'block';
+        document.getElementById('form-product-title').textContent = 'Crear Producto / Materia Prima';
+        document.getElementById('prod-id').disabled = false;
         productForm.reset();
         formulaSection.style.display = 'none';
     });
@@ -203,7 +227,6 @@ export async function initInventory(container) {
     document.getElementById('btn-cancel-stock').addEventListener('click', () => {
         formStockContainer.style.display = 'none';
     });
-
 
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -229,17 +252,31 @@ export async function initInventory(container) {
 
         try {
             const existing = await database.readOne('products', id);
-            if (existing) {
+
+            if (!isEditingProd && existing) {
                 return showAlert('El código de producto ya existe');
             }
 
-            const newProd = { id, name, provider, type, stock: 0 };
+            const newProd = { 
+                id, 
+                name, 
+                provider, 
+                type, 
+                stock: existing ? existing.stock : 0 
+            };
+            
             if (type === 'finished') {
                 newProd.formula = formula;
             }
 
-            await database.create('products', id, newProd);
-            showAlert('Producto creado exitosamente', 'success');
+            if (isEditingProd) {
+                await database.update('products', id, newProd);
+                showAlert('Producto actualizado exitosamente', 'success');
+            } else {
+                await database.create('products', id, newProd);
+                showAlert('Producto creado exitosamente', 'success');
+            }
+            
             formProductContainer.style.display = 'none';
             loadInventory();
         } catch (error) {
@@ -272,6 +309,51 @@ export async function initInventory(container) {
         }
     });
 
+    async function editProduct(id) {
+        try {
+            const prod = await database.readOne('products', id);
+            if (prod) {
+                isEditingProd = true;
+                
+                document.getElementById('prod-id').value = prod.id;
+                document.getElementById('prod-id').disabled = true;
+                
+                document.getElementById('prod-name').value = prod.name;
+                document.getElementById('prod-provider').value = prod.provider;
+                
+                document.getElementById('prod-type').value = prod.type;
+                
+                formulaItems.innerHTML = '';
+                
+                if (prod.type === 'finished' && prod.formula) {
+                    formulaSection.style.display = 'block';
+                    prod.formula.forEach(item => {
+                        addFormulaItem(item);
+                    });
+                } else {
+                    formulaSection.style.display = 'none';
+                }
+
+                document.getElementById('form-product-title').textContent = 'Editar Producto';
+                formStockContainer.style.display = 'none';
+                formProductContainer.style.display = 'block';
+            }
+        } catch (error) {
+            showAlert('Error al obtener producto: ' + error.message);
+        }
+    }
+
+    async function deleteProduct(id) {
+        if (confirm(`¿Está seguro de eliminar el producto/materia prima ${id}?`)) {
+            try {
+                await database.remove('products', id);
+                showAlert('Producto eliminado exitosamente', 'success');
+                loadInventory();
+            } catch (error) {
+                showAlert('Error al eliminar producto: ' + error.message);
+            }
+        }
+    }
 
     loadInventory();
 }
