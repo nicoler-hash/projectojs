@@ -1,4 +1,5 @@
 import { registerUser, loginUser } from '../../lib/auth.js';
+import { commonUiCss } from '../../lib/common-ui-css.js';
 import { dispatch, AppEvents } from '../../lib/events.js';
 
 class LoginView extends HTMLElement {
@@ -147,53 +148,6 @@ class LoginView extends HTMLElement {
 
     return payload;
   }
-}
-
-function commonUiCss(){
-  return `
-    :host{display:block}
-    /* base */
-
-    .center{
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px 0;
-    }
-    .container{
-      width:min(1120px, calc(100% - 24px));
-      margin:0 auto;
-    }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid rgba(148,163,184,.25);
-      border-radius:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-      padding:18px;
-      color:var(--text);
-    }
-    .row{display:flex; gap:12px; align-items:center;}
-    .col{display:flex; flex-direction:column; gap:10px;}
-    .grid-2{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
-    @media (max-width: 860px){.grid-2{grid-template-columns:1fr;}}
-    .label{font-size:13px; color: var(--muted); font-weight:700; margin-bottom:6px;}
-    .btn{
-      appearance:none;
-      border:1px solid rgba(148,163,184,.25);
-      border-radius:12px;
-      background: rgba(255,255,255,.03);
-      color:var(--text);
-      padding:10px 12px;
-      font-weight:600;
-      cursor:pointer;
-      transition: transform .05s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:focus{outline:none; box-shadow: var(--focus)}
-    .btn-primary{background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.45)}
-    .btn-danger{background: rgba(251,113,133,.12); border-color: rgba(251,113,133,.45)}
-    .btn-success{background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.45)}
-  `;
 }
 
 function loginCss(){

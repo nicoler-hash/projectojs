@@ -1,3 +1,5 @@
+import { commonUiCss } from '../../lib/common-ui-css.js';
+
 class AcmeModal extends HTMLElement {
   constructor() {
     super();
@@ -50,6 +52,7 @@ class AcmeModal extends HTMLElement {
 
   static get styleText() {
     return `
+      ${commonUiCss()}
       .modal-overlay{
         position:fixed; inset:0;
         background: rgba(0,0,0,.55);
@@ -71,25 +74,6 @@ class AcmeModal extends HTMLElement {
       .modal-title{font-weight:1000; font-size:16px}
       .modal-body{padding:16px}
       .modal-actions{display:flex; justify-content:flex-end; gap:10px; padding:0 16px 16px 16px}
-
-      .btn{
-        appearance:none;
-        border:1px solid var(--border);
-        border-radius:12px;
-        background: rgba(255,255,255,.03);
-        color:var(--text);
-        padding:10px 12px;
-        font-weight:600;
-        cursor:pointer;
-        transition: transform .05s ease, background .2s ease, border-color .2s ease;
-        font-family: var(--font);
-      }
-      .btn:hover{background: rgba(255,255,255,.06); border-color: rgba(96,165,250,.45)}
-      .btn:active{transform: translateY(1px)}
-      .btn:focus{outline:none; box-shadow: var(--focus)}
-      .btn-primary{background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.45)}
-      .btn-success{background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.45)}
-      .btn-danger{background: rgba(251,113,133,.12); border-color: rgba(251,113,133,.45)}
     `;
   }
 

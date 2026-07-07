@@ -1,4 +1,5 @@
 import { db } from '../../lib/firebase.js';
+import { commonUiCss } from '../../lib/common-ui-css.js';
 import { dispatch, AppEvents } from '../../lib/events.js';
 import { safeTrim, formatNumber } from '../../lib/format.js';
 import {
@@ -33,6 +34,7 @@ class InventoryView extends HTMLElement {
 
   render() {
     this.shadowRoot.innerHTML = `
+      <style>${commonUiCss()}${inventoryCss()}</style>
       <div class="card">
 
 
@@ -260,7 +262,6 @@ class InventoryView extends HTMLElement {
 
 function inventoryCss(){
   return `
-    .btn{font-family:var(--font);}
     .inventory-header{font-weight:1000; font-size:18px;}
     .inventory-subtitle{color:var(--muted); font-size:13px;}
   `;

@@ -1,3 +1,5 @@
+import { commonUiCss } from '../../lib/common-ui-css.js';
+
 class AcmeInput extends HTMLElement {
   constructor() {
     super();
@@ -22,20 +24,8 @@ class AcmeInput extends HTMLElement {
 
   static get styleText() {
     return `
-      :host{display:block}
-      .input{
-        width:100%;
-        padding:10px 12px;
-        border-radius:12px;
-        border:1px solid var(--border);
-        background: rgba(15,23,42,.55);
-        color:var(--text);
-        font-family: var(--font);
-      }
-      .input::placeholder{color: rgba(148,163,184,.8)}
-      .input:focus{outline:none; box-shadow: var(--focus); border-color: rgba(96,165,250,.55)}
-      .label{font-size:13px; color: var(--muted); font-weight:700; margin-bottom:6px;}
-      .col{display:flex; flex-direction:column; gap:6px}
+      ${commonUiCss()}
+      .col{gap:6px}
     `;
   }
 

@@ -1,4 +1,5 @@
 import { onAuth, logoutUser } from '../lib/auth.js';
+import { commonUiCss } from '../lib/common-ui-css.js';
 import { dispatch, AppEvents } from '../lib/events.js';
 import '../webcomponents/ui/acme-toast.js';
 
@@ -29,9 +30,8 @@ class AcmeApp extends HTMLElement {
   }
 
   static get styleText() {
-    return ``;
+    return commonUiCss();
   }
-
 
   connectedCallback() {
     this.render();

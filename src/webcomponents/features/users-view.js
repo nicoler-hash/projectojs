@@ -1,4 +1,5 @@
 import { dispatch, AppEvents } from '../../lib/events.js';
+import { commonUiCss } from '../../lib/common-ui-css.js';
 import { db } from '../../lib/firebase.js';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 import { safeTrim } from '../../lib/format.js';
@@ -21,7 +22,7 @@ class UsersView extends HTMLElement {
 
   render() {
     this.shadowRoot.innerHTML = `
-      <style>${usersCss()}</style>
+      <style>${commonUiCss()}${usersCss()}</style>
       <div class="card">
 
 
@@ -222,7 +223,6 @@ class UsersView extends HTMLElement {
 
 function usersCss(){
   return `
-    .btn{font-family:var(--font);}
     .users-header{font-weight:1000; font-size:18px;}
     .users-subtitle{color:var(--muted); font-size:13px;}
   `;

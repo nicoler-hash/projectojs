@@ -1,4 +1,5 @@
 import { AppEvents } from '../../lib/events.js';
+import { commonUiCss } from '../../lib/common-ui-css.js';
 
 class AcmeToastWrap extends HTMLElement {
   constructor() {
@@ -26,6 +27,7 @@ class AcmeToastWrap extends HTMLElement {
 
   static get styleText() {
     return `
+      ${commonUiCss()}
       .toast-wrap{
         position:fixed;
         right:14px;

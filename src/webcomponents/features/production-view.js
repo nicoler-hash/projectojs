@@ -1,4 +1,5 @@
 import { db } from '../../lib/firebase.js';
+import { commonUiCss } from '../../lib/common-ui-css.js';
 import { dispatch, AppEvents } from '../../lib/events.js';
 import { safeTrim } from '../../lib/format.js';
 import { collection, getDocs, doc, setDoc, updateDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
@@ -21,6 +22,7 @@ class ProductionView extends HTMLElement {
   render() {
     this.shadowRoot.innerHTML = `
       <style>
+        ${commonUiCss()}
         ${productionCss()}
       </style>
       <div class="card">
@@ -219,7 +221,6 @@ class ProductionView extends HTMLElement {
 
 function productionCss(){
   return `
-    .btn{font-family:var(--font);}
     .production-header{font-weight:1000; font-size:18px;}
     .production-subtitle{color:var(--muted); font-size:13px;}
   `;
