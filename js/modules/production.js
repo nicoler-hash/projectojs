@@ -96,7 +96,7 @@ export async function initProduction(container) {
                 .sort((a, b) => {
                     const aAt = new Date(a.createdAt || a.date || 0).getTime();
                     const bAt = new Date(b.createdAt || b.date || 0).getTime();
-                    return bAt - aAt; // más reciente -> más antiguo
+                    return bAt - aAt;
                 });
 
             historyArray.forEach(record => {
@@ -192,12 +192,8 @@ export async function initProduction(container) {
                 productName: product.name,
                 qty: qty,
                 materialsUsed: requiredMaterials,
-
-                // Nuevos campos requeridos por el examen
                 createdAt,
                 createdBy,
-
-                // Compatibilidad con registros anteriores
                 date: createdAt
             };
             await database.create('production_history', processCount, historyRecord);
