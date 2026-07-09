@@ -42,7 +42,8 @@ export async function initProduction(container) {
                     <tr>
                         <th>Fecha</th>
                         <th>Código</th>
-                        <th>Usuario</th>
+                        <th>Usuario ID</th>
+                        <th>Usuario Nombre</th>
                     </tr>
                 </thead>
                 <tbody id="history-tbody"></tbody>
@@ -76,6 +77,8 @@ export async function initProduction(container) {
         try {
             products = await database.read('products') || {};
             const history = await database.read('production_history') || {};
+            const users = await database.read('users') || {};
+            const usersById = users ? users : {};
             
 
             prodSelect.innerHTML = '<option value="">Seleccione producto...</option>';
@@ -106,10 +109,14 @@ export async function initProduction(container) {
                 const createdAt = record.createdAt || record.date;
                 const createdAtLabel = createdAt ? new Date(createdAt).toLocaleString() : '';
 
+                const createdById = record.createdBy;
+                const createdByName = createdById && usersById[createdById] ? (usersById[createdById].name ?? '') : '';
+
                 tr.innerHTML = `
                     <td>${createdAtLabel}</td>
                     <td>${record.id}</td>
                     <td>${record.createdBy !== undefined ? record.createdBy : ''}</td>
+                    <td>${createdByName}</td>
                 `;
                 historyTbody.appendChild(tr);
             });
