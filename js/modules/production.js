@@ -109,7 +109,7 @@ export async function initProduction(container) {
                 tr.innerHTML = `
                     <td>${createdAtLabel}</td>
                     <td>${record.id}</td>
-                    <td>${record.createdBy ?? ''}</td>
+                    <td>${record.createdBy !== undefined ? record.createdBy : ''}</td>
                 `;
                 historyTbody.appendChild(tr);
             });
