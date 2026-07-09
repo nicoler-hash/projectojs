@@ -40,15 +40,12 @@ export async function initProduction(container) {
             <table>
                 <thead>
                     <tr>
-                        <th>Proceso ID</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
                         <th>Fecha</th>
+                        <th>Código</th>
+                        <th>Usuario</th>
                     </tr>
                 </thead>
-                <tbody id="history-tbody">
-
-                </tbody>
+                <tbody id="history-tbody"></tbody>
             </table>
         </div>
     `;
@@ -94,16 +91,25 @@ export async function initProduction(container) {
 
             historyTbody.innerHTML = '';
             let maxId = 0;
-            const historyArray = Object.values(history).sort((a, b) => b.id - a.id);
-            
+
+            const historyArray = Object.values(history)
+                .sort((a, b) => {
+                    const aAt = new Date(a.createdAt || a.date || 0).getTime();
+                    const bAt = new Date(b.createdAt || b.date || 0).getTime();
+                    return bAt - aAt; // más reciente -> más antiguo
+                });
+
             historyArray.forEach(record => {
                 if (record.id > maxId) maxId = record.id;
                 const tr = document.createElement('tr');
+
+                const createdAt = record.createdAt || record.date;
+                const createdAtLabel = createdAt ? new Date(createdAt).toLocaleString() : '';
+
                 tr.innerHTML = `
+                    <td>${createdAtLabel}</td>
                     <td>${record.id}</td>
-                    <td>${record.productName}</td>
-                    <td>${record.qty}</td>
-                    <td>${new Date(record.date).toLocaleString()}</td>
+                    <td>${record.createdBy ?? ''}</td>
                 `;
                 historyTbody.appendChild(tr);
             });
@@ -174,13 +180,25 @@ export async function initProduction(container) {
 
 
             processCount++;
+
+            const currentUserRaw = localStorage.getItem('currentUser');
+            const currentUser = currentUserRaw ? JSON.parse(currentUserRaw) : null;
+            const createdBy = currentUser?.id ?? 'desconocido';
+
+            const createdAt = new Date().toISOString();
             const historyRecord = {
                 id: processCount,
                 productId: product.id,
                 productName: product.name,
                 qty: qty,
                 materialsUsed: requiredMaterials,
-                date: new Date().toISOString()
+
+                // Nuevos campos requeridos por el examen
+                createdAt,
+                createdBy,
+
+                // Compatibilidad con registros anteriores
+                date: createdAt
             };
             await database.create('production_history', processCount, historyRecord);
 
